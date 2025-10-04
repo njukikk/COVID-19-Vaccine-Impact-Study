@@ -1,0 +1,276 @@
+---
+title: 'STAT 5033: Nonparametric Methods'
+author: "Kelvin Njuki"
+subtitle: Final Project
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# Loading the necessary package for this project
+library(tidyverse)
+library(car)
+library(patchwork)
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+library(cowplot)
+library(bookdown)
+```
+
+
+```{r}
+# Read in the data
+covid <- read.csv("owid-covid-data.csv")
+
+# Data cleaning; selecting the desired variables and removing the missing values
+covid2 <- covid %>%
+  dplyr::select(continent, population, location, date, new_cases_smoothed_per_million,
+                new_deaths_smoothed_per_million, positive_rate,
+                total_vaccinations_per_hundred, gdp_per_capita,
+                population) %>%
+  na.omit() # remove NAs
+```
+
+
+```{r}
+# Data Exploratory
+
+# Density curves to check the distributions of the variables
+
+# New Cases
+p1 <- ggplot() + 
+  geom_density(aes(x=new_cases_smoothed_per_million), data = covid2) +
+  labs(x="New Cases (per 1 million people)", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# New Deaths
+p2 <- ggplot() +
+  geom_density(aes(x=new_deaths_smoothed_per_million), data = covid2) +
+  labs(x="New Deaths (per 1 million people)", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# Positive Rate
+p3 <- ggplot() + 
+  geom_density(aes(x=positive_rate), data = covid2) +
+  labs(x="Positive Rate", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# Total Vaccinations
+p4 <- ggplot() + 
+  geom_density(aes(x=total_vaccinations_per_hundred), data = covid2) +
+  labs(x="Total Vaccinations (per 100 people)", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# GDP per capita
+p5 <- ggplot() + 
+  geom_density(aes(x=gdp_per_capita), data = covid2) +
+  labs(x="GDP per Capita", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# Organize the plots
+grid.arrange(p1, p2, p3, p4, p5, ncol=2)
+```
+
+
+```{r}
+
+# Scatter plots to check the association
+
+# New Cases vs. Total Vaccinations
+s1 <- ggplot() + 
+  geom_point(aes(x=new_cases_smoothed_per_million, y=total_vaccinations_per_hundred),
+             alpha = 0.4, size=0.1, data = covid2) +
+  labs(x="New Cases (per million)", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# New Deaths vs. Total Vaccinations
+s2 <- ggplot() + 
+  geom_point(aes(x=new_deaths_smoothed_per_million, y=total_vaccinations_per_hundred), 
+             alpha = 0.4, size=0.1, data = covid2) +
+  labs(x="New Deaths (per million)", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# Positive Rate vs. Total Vaccinations
+s3 <- ggplot() + 
+  geom_point(aes(x=positive_rate, y=total_vaccinations_per_hundred), size=0.1, 
+             alpha = 0.4, data = covid2) +
+  labs(x="Positive Rate", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# GDP per capita vs. Total Vaccinations
+s4 <- ggplot() + 
+  geom_point(aes(x=gdp_per_capita, y=total_vaccinations_per_hundred), size=0.1,
+             alpha = 0.4, data = covid2) +
+  labs(x="GDP per Capita", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# Organize the plots
+grid.arrange(s1, s2, s3, s4, ncol=2)
+```
+
+
+```{r}
+# Faceted bar charts to check if there exist difference in number of vaccinations and GDP per capita among different continents
+
+# Data Manipulation
+
+# Summarizing the average total number of vaccinations per continent
+vaccine_summary <- covid2 %>%
+  group_by(continent) %>%
+  summarize(total_vaccinations_per_hundred = mean(total_vaccinations_per_hundred))
+
+# Summarizing the average GDP per capita per continent
+GDP_summary <- covid2 %>%
+  group_by(continent) %>%
+  summarize(gdp_per_capita = mean(gdp_per_capita))
+
+# Summarizing the population per continent
+pop_summary <- covid2 %>%
+  group_by(continent) %>%
+  summarize(population = mean(population))
+
+# Summarizing the proportion of people vaccinated per continent
+pop_vaccinated <- cbind(vaccine_summary, pop_summary[-1], GDP_summary[-1]) %>%
+  mutate(prop_vaccinated = (total_vaccinations_per_hundred*100)/population)
+
+# Faceted bar charts to check if there exist difference in proportion of people vaccinated among different continents
+b1 <- ggplot()+
+  geom_col(aes(x=continent, y = prop_vaccinated), data = pop_vaccinated) +
+  labs(x = "Continent", y = "Proportion Vaccinated") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# Faceted bar charts to check if there exist difference in GDP per capita among different continents
+b2 <- ggplot()+
+  geom_col(aes(x=continent, y=gdp_per_capita), data = GDP_summary) +
+  labs(x="Continent", y="GDP per capita") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+grid.arrange(b1, b2, ncol = 2)
+```
+
+
+```{r functions, warning=FALSE}
+# Associations
+
+## NonParametric Methods
+
+### 1. Association between new cases and total vaccinations
+cor.test(~ new_cases_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="spearman", exact = FALSE, data = covid2)
+
+### 2. Association between new deaths and total vaccinations
+cor.test(~ new_deaths_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="spearman", exact = FALSE, data = covid2)
+
+### 3. Association between positive rate and total vaccinations
+cor.test(~ positive_rate + total_vaccinations_per_hundred, alternative = "less", method="spearman", exact = FALSE, data = covid2)
+
+### 4. Association between GPD per Capita and total vaccinations
+cor.test(~ gdp_per_capita + total_vaccinations_per_hundred, alternative = "two.sided", method="spearman", data = covid2)
+
+```
+
+
+
+```{r warning=FALSE}
+## Parametric Methods
+
+### 1. Correlation between new cases and total vaccinations
+cor.test(~ new_cases_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="pearson", data = covid2)
+
+### 2. Correlation between new deaths and total vaccinations
+cor.test(~ new_deaths_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="pearson", data = covid2)
+
+### 3. Correlation between positive rate and total vaccinations
+cor.test(~ positive_rate + total_vaccinations_per_hundred, alternative = "less", method="pearson", data = covid2)
+
+### 4. Correlation between gdp per capita and total vaccinations
+cor.test(~ gdp_per_capita + total_vaccinations_per_hundred, alternative = "two.sided", method="pearson", data = covid2)
+```
+
+
+```{r echo=FALSE, results='asis'}
+# Testing if there exist difference in number of vaccinations among different continents
+
+## Parametric method: ANOVA
+summary(aov(total_vaccinations_per_hundred ~ factor(continent), data = covid2))
+
+
+## Nonparametric method: Kruskal-Wallis
+kruskal.test(total_vaccinations_per_hundred ~ factor(continent), data = covid2)
+
+# Testing if there exist difference in GDP per Capita among different continents
+
+## Parametric method: ANOVA
+summary(aov(gdp_per_capita ~ factor(continent), data = covid2))
+
+
+## Nonparametric method: Kruskal-Wallis
+kruskal.test(gdp_per_capita ~ factor(continent), data = covid2)
+```

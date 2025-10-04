@@ -1,0 +1,456 @@
+---
+geometry: "left=1in,right=1in,top=1in,bottom=1in"
+output:
+  pdf_document:
+    number_sections: yes
+  html_document:
+    df_print: paged
+  word_document: default
+fontsize: 12pt
+header-includes: \usepackage{setspace}\singlespacing
+bibliography: Refs.bib
+link-citations: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(car)
+library(patchwork)
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+library(cowplot)
+library(bookdown)
+```
+
+# Investigating the Impact of COVID-19 Vaccine on COVID-19 Pandemic{-}
+Kelvin Njuki
+
+# Introduction
+
+## Background Information
+
+Early last year (2020), the World was stormed by a deadly novel human coronavirus disease that was later named as COVID-19. The virus was declared as a pandemic by the World Health Organization on March 2020. Businesses and schools were closed as one way of curbing the spread of the virus. Countries closed their boundaries to limit the number of people entering their jurisdiction. The number of people with confirmed COVID-19 cases started increasing as the virus spread from one region to the other. Scientists and scholars moved with speed to identify how the virus was spreading from one person to the other. This discovery led to introduction of some measures that would reduce the spread. These included, sanitizing your hands after touching most accessible surfaces, avoiding shaking of hands, washing your hands multiple times in a day, keeping social distance while in public places, among others. However, these measures were not enough because they could only slow the spread. Further research was conducted and especially on ways to weaken the virus in a human body. This led to start of the vaccine development in different schools and industries. Several vaccines such as Pfizer-BioNTech, Moderna, Johnson & Johnson’s Janssen, Oxford–AstraZeneca, Sinopharm BIBP, Sputnik V, CoronaVac, Covaxin, Sputnik Light, among others were developed. Some of these vaccines are still not fully approved by the Food and Drug Administration (FDA), but they are being used for emergency purpose. None of these vaccines has 100% efficiency. However, the scholars and scientists believed that the vaccine would significantly help in reducing the spread of the virus. That is, reducing the number of new cases and deaths. Most of the researchers have addressed the vaccine development progress, @wu2020progress, acceptance by people, @lazarus2021global, vaccine efficacy, @lipsitch2020understanding, psychological characteristics, @madison2021psychological, side effects, @saeed2021side, among others. There is little attention on whether the vaccine has significantly reduced the COVID-19 numbers. This study focuses on investigating the effect of the vaccine on COVID-19 pandemic. The results will shed light on how the World is doing on COVID-19 numbers, that is, is the vaccine reliable and is it a permanent solution to the pandemic?
+
+\newpage
+
+## Research Problem
+
+As alluded earlier, there is little attention on finding out if the vaccine has significantly reduced the COVID-19 numbers. This study will investigate this problem and report the findings. More specifically, the study aims at answering the following research questions:
+
+i) Is there a negative association between the number of deaths and the number of vaccinations received? That is, can we conclude that as the number of vaccinations increase, the number of new deaths is decreasing?
+
+ii) Is the number of new cases negatively associated with the number of vaccinations received? That is, can we conclude that as the number of vaccinations increase, the number of new cases is decreasing?
+
+iii) Has the vaccine reduced the number of positive cases per test?
+
+iv) Does there exists a significant difference in the number of vaccinations received among different countries?
+
+v)  How is the Gross Domestic Product (GDP) per capita affecting the vaccinations in different continents? Have the continents with high GDP per capita vaccinated more people?
+
+
+## Data Description
+
+The data used in this study was obtained from Our World in Data platform ([Link: COVID-19 Dataset by Our World in Data](https://github.com/owid/covid-19-data)). The data was collected from February 2019 until to date. It is being updated after every two hours. The data was gathered from various sources such as, Center for Systems and Engineering at Johns Hopkins University (confirmed cases and deaths data), Our World in Data official reports (testing and vaccinations data), other data variables were collected by various sources such United Nations, World Bank, Global Burden of Disease, Blavatnik School of Government etc. The data set had 67 variables and 136250 observations. The missing observations (NAs) were omitted. The study used only nine variables. Among the nine, two are categorical variables, one is a date variable, and six are quantitative variables. These are, 
+
+- `location` - Geographical location
+
+- `continent` - Continent of the geographical location
+
+- `date` - Date of observation
+
+- `population` - Population (latest available values). See https://github.com/owid/covid-19-data/blob/master/scripts/input/un/population_latest.csv for full list of sources
+
+- `new_cases_smoothed_per_million` - New confirmed cases of COVID-19 (7-day smoothed) per 1,000,000 people. "For countries that don't report new cases data on a daily basis, we assume that numbers changed equally on a daily basis over any periods in which no data was reported. This produces a complete series of daily figures, which is then averaged over a rolling 7-day window."
+
+- `new_deaths_smoothed_per_million` - New deaths attributed to COVID-19 (7-day smoothed) per 1,000,000 people
+
+- `positive_rate` -	The share of COVID-19 tests that are positive, given as a rolling 7-day average.
+
+- `total_vaccinations_per_hundred` - Total number of COVID-19 vaccination doses administered per 100 people in the total population
+
+- `gdp_per_capita` - Gross domestic product at purchasing power parity (constant 2011 international dollars), most recent year available.
+
+To achieve comparison of the number of people vaccinated per continent, we computed the proportion of people vaccinated. This was important because the continents had different population sizes. So the proportion vaccinated was computed as follows;
+
+`prop_vaccinated` = {Total number of people vaccinated} / {Total population size}
+
+# Methods
+
+The study aimed at finding out if the COVID-19 vaccines had a significant impact on the pandemic. To answer this research problem, there were various statistical methods employed, that is, nonparametric methods with their equivalent parametric methods for comparison purpose. Nonparametric methods used were Spearman correlation test - which was performed to find out if there was a negative association between the new cases and the vaccinations, new deaths and the vaccinations, and positive rate and the vaccinations. Further, the method was used to find if there was any association between GDP per capita and the vaccinations. Pearson correlation test, which is an equivalent parametric method was conducted on the same variables and the results were compared. To find out if there was any significant difference in the number of vaccinations among the continents, and GDP per capita among the continents, Kruskal-Wallis test was performed and compared with its equivalent parametric method (One-Way ANOVA). The tests were conducted at 5% significance level and the analysis was done using R software.  
+
+
+# Results
+
+## Exploratory Data Analysis
+
+Exploring the data before inferential data analysis is essential because it gives an insight into the data. It helps the researcher decide on the appropriate analysis methods for the study (either parametric or nonparametric). Parametric methods are commonly used when all the underlined assumptions are met. The assumptions includes normality, homoscedasticity, large sample size among others. If the assumptions are not met, then nonparametric methods are used.
+
+```{r}
+# Read in the data
+covid <- read.csv("owid-covid-data.csv")
+
+# Data cleaning; selecting the desired variables and removing the missing values
+covid2 <- covid %>%
+  dplyr::select(continent, population, location, date, new_cases_smoothed_per_million,
+                new_deaths_smoothed_per_million, positive_rate,
+                total_vaccinations_per_hundred, gdp_per_capita,
+                population) %>%
+  na.omit()
+```
+
+
+```{r fig.align='center', fig.pos="H", fig.cap="Density curves for new cases, deaths, positive rate and vaccinations", fig.dim=c(7.5,5)}
+# Data Exploratory
+
+# Density curves to check the distributions of the variables
+p1 <- ggplot() + 
+  geom_density(aes(x=new_cases_smoothed_per_million), data = covid2) +
+  labs(x="New Cases (per 1 million people)", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+p2 <- ggplot() +
+  geom_density(aes(x=new_deaths_smoothed_per_million), data = covid2) +
+  labs(x="New Deaths (per 1 million people)", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+p3 <- ggplot() + 
+  geom_density(aes(x=positive_rate), data = covid2) +
+  labs(x="Positive Rate", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+p4 <- ggplot() + 
+  geom_density(aes(x=total_vaccinations_per_hundred), data = covid2) +
+  labs(x="Total Vaccinations (per 100 people)", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+p5 <- ggplot() + 
+  geom_density(aes(x=gdp_per_capita), data = covid2) +
+  labs(x="GDP per Capita", y="Density") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 10),
+        axis.text.y = element_text(size = 10),
+        axis.title = element_text(size = 10),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 10),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+grid.arrange(p1, p2, p3, p4, p5, ncol=2)
+```
+
+In this study, we generated density curves to find out if the variables were normally distributed. Figure 1 above reports that all the five quantitative variables are heavily skewed to the right. This implies that for valid results, nonparametric methods should be used. Further, we plotted scatter plots for our variables to find out if there was any linear association between them. 
+
+
+Figure 2 below shows some association between vaccinations and other variables, but it is quite difficult to tell the strength and direction of the association. Therefore, conducting inferential analysis such as Pearson and/or Spearman correlation would give us a better conclusion.
+
+
+To find out if the number of vaccinations and GDP per capita varied among the continents, we generate a bar plots of the vaccinations and GDP per capita, each faceted by the continent. The plot (Figure 3) shows some difference in these variables among the continents. However, we are not sure if the difference in significant. Therefore, conducting inferential analysis such Kruskal-Wallis and/or One-Way ANOVA would answer this question.
+
+```{r fig.align='center', fig.pos="H", fig.cap="Scatter plots for new cases, deaths, positive rate against vaccinations", fig.dim=c(7,4)}
+
+# Scatter plots to check the association
+s1 <- ggplot() + 
+  geom_point(aes(x=new_cases_smoothed_per_million, y=total_vaccinations_per_hundred),
+             alpha = 0.4, size=0.1, data = covid2) +
+  labs(x="New Cases (per million)", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+s2 <- ggplot() + 
+  geom_point(aes(x=new_deaths_smoothed_per_million, y=total_vaccinations_per_hundred), 
+             alpha = 0.4, size=0.1, data = covid2) +
+  labs(x="New Deaths (per million)", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+s3 <- ggplot() + 
+  geom_point(aes(x=positive_rate, y=total_vaccinations_per_hundred), size=0.1, 
+             alpha = 0.4, data = covid2) +
+  labs(x="Positive Rate", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+s4 <- ggplot() + 
+  geom_point(aes(x=gdp_per_capita, y=total_vaccinations_per_hundred), size=0.1,
+             alpha = 0.4, data = covid2) +
+  labs(x="GDP per Capita", y="Total Vaccinations (per 100 people)") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 0, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+
+grid.arrange(s1, s2, s3, s4, ncol=2)
+```
+
+
+```{r fig.align='center', fig.pos="H", fig.cap="Bar plots for number of vaccinations and GDP per capita across the continents", fig.dim=c(7,3)}
+# Faceted bar charts to check if there exist difference in number of vaccinations among different continents
+
+# Summarizing the average total number of vaccinations per continent
+vaccine_summary <- covid2 %>%
+  group_by(continent) %>%
+  summarize(total_vaccinations_per_hundred = mean(total_vaccinations_per_hundred))
+
+# Summarizing the average GDP per capita per continent
+GDP_summary <- covid2 %>%
+  group_by(continent) %>%
+  summarize(gdp_per_capita = mean(gdp_per_capita))
+
+# Summarizing the population per continent
+pop_summary <- covid2 %>%
+  group_by(continent) %>%
+  summarize(population = mean(population))
+
+# Summarizing the proportion of people vaccinated per continent
+pop_vaccinated <- cbind(vaccine_summary, pop_summary[-1], GDP_summary[-1]) %>%
+  mutate(prop_vaccinated = (total_vaccinations_per_hundred*100)/population)
+
+b1 <- ggplot()+
+  geom_col(aes(x=continent, y = prop_vaccinated), data = pop_vaccinated) +
+  labs(x = "Continent", y = "Proportion Vaccinated") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+# Faceted bar charts to check if there exist difference in GDP per capita among different continents
+b2 <- ggplot()+
+  geom_col(aes(x=continent, y=gdp_per_capita), data = GDP_summary) +
+  labs(x="Continent", y="GDP per capita") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle = 90, size = 8),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 8),
+        axis.ticks = element_line(size=0.2),
+        strip.text = element_text(size = 8),
+        strip.text.y = element_text(angle = 0, size = 5.5))
+
+grid.arrange(b1, b2, ncol = 2)
+```
+
+
+## Inferential Analysis
+
+Tables 1, 2 and 3 below contains the results from the inferential analysis methods. The discussions of the results is below.
+
+### Negative association between new cases and vaccinations?
+
+The results from Spearman correlation test (nonparametric) suggests that there is no negative association between the number of new cases and the vaccinations (p-value = 1) at 5% significance level. Instead, there is a "very" weak positive association. An equivalent parametric method (Pearson correlation test) reports a similar conclusion.
+
+### Negative association between new deaths and vaccinations?
+
+Spearman correlation test (nonparametric) shows a weak negative association between vaccinations and the number of new deaths (p-value = 0). The Pearson correlation test also shows presence of a negative association between the two variables (p-value = 0).
+
+### Negative association between positive rate and vaccinations?
+
+Positive rate is the share of COVID-19 tests that are positive. From the results below, both Spearman and Pearson reports a weak, negative association between vaccinations and the number of positive cases per test (p-value = 0).
+
+### Association between GDP per Capita and vaccinations
+
+GDP per capita plays a major role when it comes to budgeting in different countries. It was worth investigating if the number of vaccinations were affected by the GDP per capita. Both Spearman and Pearson correlation tests reported a weak positive association between these two variables.
+
+```{r functions, warning=FALSE, results='asis', echo=FALSE, fig.pos='H'}
+# Associations
+
+## NonParametric Methods
+
+### 1. Association between new cases and vaccinations
+npar1 <- cor.test(~ new_cases_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="spearman", exact = FALSE, data = covid2)
+npar1.pvalue <- round(npar1$p.value,4)
+npar1.cor <- round(npar1$estimate,4)
+
+### 2. Association between new deaths and vaccinations
+npar2 <- cor.test(~ new_deaths_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="spearman", exact = FALSE, data = covid2)
+npar2.pvalue <- round(npar2$p.value,4)
+npar2.cor <- round(npar2$estimate,4)
+
+### 3. Association between positive rate and vaccinations
+npar3 <- cor.test(~ positive_rate + total_vaccinations_per_hundred, alternative = "less", method="spearman", exact = FALSE, data = covid2)
+npar3.pvalue <- round(npar3$p.value,4)
+npar3.cor <- round(npar3$estimate,4)
+
+### 4. Association between GPD per Capita and vaccinations
+npar4 <- cor.test(~ gdp_per_capita + total_vaccinations_per_hundred, alternative = "two.sided", method="spearman", data = covid2)
+npar4.pvalue <- round(npar4$p.value,4)
+npar4.pvalue <- "< 2.2e-16"
+npar4.cor <- round(npar4$estimate,4)
+
+variables <- c("New Cases vs Vaccinations", "New Deaths vs Vaccinations", "Positive Rate vs Vaccinations", "GDP per Capita vs Vaccinations")
+p_value <- c(npar1.pvalue, npar2.pvalue, npar3.pvalue, npar4.pvalue)
+rho <- c(npar1.cor, npar2.cor, npar3.cor, npar4.cor)
+strength <- c("Weak", "Weak", " Weak" , "Weak")
+direction <- c("Positive", "Negative", "Negative", "Positive")
+
+
+nparams_result <- cbind.data.frame(variables, p_value, rho, strength, direction)
+row.names(nparams_result) <- NULL
+
+require(knitr)
+knitr::kable(nparams_result, format = "latex", booktabs = TRUE,  align = 'c', escape = FALSE,
+             caption = "Spearman correlation test (Nonparametric Method) results",
+             col.names = c("Variables", "P-value", 
+                           "$\\hat \\rho$",
+                           "Strength",
+                           "Direction")) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+
+
+```{r warning=FALSE, results='asis', echo=FALSE, fig.pos='H'}
+## Parametric Methods
+
+### 1. Correlation between new cases and vaccinations
+par1 <- cor.test(~ new_cases_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="pearson", data = covid2)
+par1.pvalue <- round(par1$p.value, 4)
+par1.cor <- round(par1$estimate,4)
+
+### 2. Correlation between new deaths and vaccinations
+par2 <- cor.test(~ new_deaths_smoothed_per_million + total_vaccinations_per_hundred, alternative = "less", method="pearson", data = covid2)
+par2.pvalue <- round(par2$p.value, 4)
+par2.cor <- round(par2$estimate,4)
+
+### 3. Correlation between positive rate and vaccinations
+par3 <- cor.test(~ positive_rate + total_vaccinations_per_hundred, alternative = "less", method="pearson", data = covid2)
+par3.pvalue <- round(par3$p.value, 4)
+par3.pvalue <- "< 2.2e-16"
+par3.cor <- round(par3$estimate,4)
+
+### 4. Correlation between gdp per capita and vaccinations
+par4 <- cor.test(~ gdp_per_capita + total_vaccinations_per_hundred, alternative = "two.sided", method="pearson", data = covid2)
+par4.pvalue <- round(par4$p.value,4)
+par4.pvalue <- "< 2.2e-16"
+par4.cor <- round(par4$estimate,4)
+
+variables <- c("New Cases vs Vaccinations", "New Deaths vs Vaccinations", "Positive Rate vs Vaccinations", "GDP per Capita vs Vaccinations")
+p_value <- c(par1.pvalue, par2.pvalue, par3.pvalue, par4.pvalue)
+rho <- c(par1.cor, par2.cor, par3.cor, par4.cor)
+strength <- c("Weak", "Weak", " Weak" , "Weak")
+direction <- c("Positive", "Negative", "Negative", "Positive")
+
+
+params_result <- cbind.data.frame(variables, p_value, rho, strength, direction)
+row.names(params_result) <- NULL
+
+require(knitr)
+knitr::kable(params_result, caption = "Pearson correlation test (Parametric Method) results",
+      format = "latex", booktabs = TRUE,  align = 'c', escape = FALSE,
+             col.names = c("Variables", "P-value", 
+                           "$\\hat \\rho$", 
+                           "Strength", "Direction")) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+
+
+### Any difference in the GDP per Capita among the continents?
+
+Kruskal-Wallis rank sum test (nonparametric) shows a significant difference in the GDP per capita among the continents. The equivalent parametric method (One-Way ANOVA) agrees with these results.
+
+### Any difference in the number of vaccinations among the continents?
+
+Kruskal-Wallis rank sum test (nonparametric) shows there is a significant difference in the number of vaccinations among the continents. The equivalent parametric method (One-Way ANOVA) reports similar results. This could be explained by the GDP per capita in these continents. We have seen before that GDP is positively correlated with the number of vaccinations.
+
+
+```{r echo=FALSE, results='asis'}
+# Testing if there exist difference in number of vaccinations among different continents
+
+# ## Parametric method: ANOVA
+# summary(aov(total_vaccinations_per_hundred ~ factor(continent), data = covid2))
+# 
+# 
+# ## Nonparametric method: Kruskal-Wallis
+# kruskal.test(total_vaccinations_per_hundred ~ factor(continent), data = covid2)
+# 
+# # Testing if there exist difference in GDP per Capita among different continents
+# 
+# ## Parametric method: ANOVA
+# summary(aov(gdp_per_capita ~ factor(continent), data = covid2))
+# 
+# 
+# ## Nonparametric method: Kruskal-Wallis
+# # kruskal.test(gdp_per_capita ~ factor(continent), data = covid2)
+
+
+variable <- c("GDP per Capita vs Continents", "Vaccinations vs Continents")
+krus_wals <- c("< 2.2e-16", "< 2.2e-16")
+anov <- c("< 2.2e-16", "< 2.2e-16")
+
+
+result <- cbind.data.frame(variable, krus_wals, anov)
+row.names(result) <- NULL
+colnames(result) <- c("Variables", "Kruskal-Wallis test", "One-Way ANOVA test")
+kable(result, caption = "P-values from a nonparametric (Kruskal-Wallis) and parametric (One-Way ANOVA) method", format = "latex", booktabs = TRUE) %>%
+  kable_styling(latex_options = "HOLD_position")
+```
+
+
+\newpage
+
+
+# Discussion
+
+COVID-19 vaccine brought a lot of hope to the World. The expectation was that the vaccine would significantly reduce the number of new cases and deaths. Although, the results have showed that the vaccine has a negative association with the number of new deaths, this association is very weak (Section 3.2.2). The number of positive cases per test is also negatively associated with the vaccinations, which implies that the number of positive cases per test is reducing as more people continue getting vaccinated (Section 3.2.3). This is a sign that the vaccine is reducing the spread of the virus. However, it is doing so at a very slow rate as we have seen the correlation coefficients were very low (weak association). 
+The number of new cases has a positive association with the number of vaccinations (Section 3.2.1). Although, the association is very weak, it is wake up call. This suggests that the vaccination is yet to significantly reduce the number of new cases. The proportion of people vaccinated is significantly differing among the continents. This could be due to the difference in the GDP per capita.
+
+# Conclusion and Recommendations
+
+Generally, the COVID-19 is reducing the number of deaths and positive cases per test, but at a very slow rate. The number of new cases are still being reported but they are not as many as when the pandemic started. This implies that if the vaccinations campaign continues and people accept to be vaccinated, the number of new cases and deaths will eventually go down significantly. I would recommend that people continue taking precautions to avoid increase on new cases and deaths. The people who are not vaccinated should consider getting vaccinated to reduce the number of deaths. All other measures as advised by the Center for Disease Control should continue as we hope the numbers will eventually decrease significantly. 
+
+\newpage
+
+# References
+
+R Core Team (2021). R: A language and environment for statistical computing. R
+  Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+  
+  Hollander, M., Wolfe, D. A., & Chicken, E. (2013). Nonparametric statistical methods (Vol. 751). John Wiley & Sons.
+  
+  
