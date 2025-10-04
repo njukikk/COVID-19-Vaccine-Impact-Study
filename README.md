@@ -1,2 +1,2 @@
 # COVID-19-Vaccine-Impact-Study
-The project integrated data from Johns Hopkins, UN, World Bank, and Our World in Data into a unified dataset for COVID-19 pandemic analysis. I applied ANOVA, correlation analysis, and nonparametric tests to quantify the effect of vaccination on new cases, deaths, and positivity rates.
+The project integrated data from Johns Hopkins, UN, World Bank, and Our World in Data into a unified dataset for COVID-19 pandemic analysis. I applied ANOVA, correlation analysis, and nonparametric tests to quantify the effect of vaccination on new cases, deaths, and positivity rates. Here is the link to the dataset: https://github.com/owid/covid-19-data/blob/master/public/data/owid-covid-data-old.csv.
